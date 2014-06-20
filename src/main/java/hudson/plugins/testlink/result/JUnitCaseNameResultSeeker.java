@@ -35,6 +35,8 @@ import hudson.tasks.junit.TestResult;
 import hudson.tasks.junit.CaseResult;
 
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.kohsuke.stapler.DataBoundConstructor;
 
@@ -51,6 +53,7 @@ import br.eti.kinoshita.testlinkjavaapi.constants.ExecutionStatus;
  * @since 3.1
  */
 public class JUnitCaseNameResultSeeker extends AbstractJUnitResultSeeker {
+	private static final Logger LOGGER = Logger.getLogger("hudson.plugins.testlink");
 
 	private static final long serialVersionUID = 2278496777245515704L;
 
@@ -86,13 +89,16 @@ public class JUnitCaseNameResultSeeker extends AbstractJUnitResultSeeker {
 		try {
 			final JUnitParser parser = new JUnitParser(false);
 			final TestResult testResult = parser.parse(this.includePattern, build, launcher, listener);
-			
 			for(SuiteResult suiteResult : testResult.getSuites()) {
 				for(CaseResult caseResult : suiteResult.getCases()) {
 					for(TestCaseWrapper automatedTestCase : automatedTestCases) {
+						LOGGER.log(Level.FINE," Custom Fields in TEST case definition from TEST Link="+automatedTestCase.getCustomFields().size());
+						
 						final String[] commaSeparatedValues = automatedTestCase.getKeyCustomFieldValues(this.keyCustomField);
+						LOGGER.log(Level.FINE," custom fields ="+commaSeparatedValues.length+" for "+this.keyCustomField);
 						for(String value : commaSeparatedValues) {
-							if(! caseResult.isSkipped() && caseResult.getName().equals(value)) {
+							LOGGER.log(Level.FINE," value ="+value+"  caseResult.getName()="+caseResult.getName()+" isSkipped="+caseResult.isSkipped());
+							if(! caseResult.isSkipped() && caseResult.getName().startsWith(value)) {
 								ExecutionStatus status = this.getExecutionStatus(caseResult);
 								automatedTestCase.addCustomFieldAndStatus(value, status);
 								
